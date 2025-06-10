@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TofuBot", "TofuBot\TofuBot.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotOneOne", "BotOneOne\BotOneOne.csproj", "{A06D663C-E206-422A-AEFF-86FB80ACAB2C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TofuBot.AI", "TofuBot.AI\TofuBot.AI.csproj", "{C7C823EF-62CA-41AB-990D-E064B02D9404}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{A06D663C-E206-422A-AEFF-86FB80ACAB2C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A06D663C-E206-422A-AEFF-86FB80ACAB2C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A06D663C-E206-422A-AEFF-86FB80ACAB2C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C7C823EF-62CA-41AB-990D-E064B02D9404}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C7C823EF-62CA-41AB-990D-E064B02D9404}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C7C823EF-62CA-41AB-990D-E064B02D9404}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C7C823EF-62CA-41AB-990D-E064B02D9404}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

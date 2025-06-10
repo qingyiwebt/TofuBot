@@ -3,52 +3,48 @@ using System.Threading.Tasks.Dataflow;
 
 namespace BotOneOne.Connectivity;
 
-public class ReversedWebSocketConnectionSource : IConnectionSource
+public class ReversedWebSocketConnectionSource : BaseWebSocketConnection
 {
-    private readonly BufferBlock<Memory<byte>> _receiveQueue = new();
-    private readonly BufferBlock<Memory<byte>> _sendQueue = new();
-    
-    private WebSocket? _socket = null;
     private CancellationTokenSource _cancellationTokenSource = new();
-    public bool IsOpen => _socket != null;
-    
-    public Task<Memory<byte>> ReadPacket()
-    {
-        return _receiveQueue.ReceiveAsync();
-    }
 
-    public Task SendPacket(Memory<byte> packet)
+    /// <summary>
+    /// Set the active socket, and task of workers will be returned.
+    /// If the connection is already opened, null will be returned.
+    /// </summary>
+    /// <returns>A task which will be completed when connection close</returns>
+    public Task? UpgradeWebSocket(WebSocket socket)
     {
-        return _sendQueue.SendAsync(packet);
-    }
-
-    public void UpgradeWebSocket(WebSocket socket)
-    {
-        if (_socket != null)
+        if (IsOpen)
         {
-            return;
+            return null;
         }
+
+        Connection = socket;
         
-        _socket = socket;
-        Worker();
+        return Task.WhenAll(RxWorker(_cancellationTokenSource.Token),
+            TxWorker(_cancellationTokenSource.Token));
     }
 
     public void Close()
     {
         _cancellationTokenSource.Cancel();
         _cancellationTokenSource = new CancellationTokenSource();
+        Connection = null;
     }
 
-    private async void Worker()
+    private async Task RxWorker(CancellationToken cancellationToken)
     {
-        var cancellationToken = _cancellationTokenSource.Token;
-        
-        while (!cancellationToken.IsCancellationRequested
-               && _socket!.State == WebSocketState.Open)
+        while (IsOpen && !cancellationToken.IsCancellationRequested)
         {
-            
+            await PollRx(cancellationToken);
         }
+    }
 
-        _socket = null;
-    } 
+    private async Task TxWorker(CancellationToken cancellationToken)
+    {
+        while (IsOpen && !cancellationToken.IsCancellationRequested)
+        {
+            await PollTx(cancellationToken);
+        }
+    }
 }

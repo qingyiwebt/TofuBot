@@ -2,6 +2,6 @@
 
 public interface IConnectionSource
 {
-    public Task<Memory<byte>> ReadPacket();
-    public Task SendPacket(Memory<byte> packet);
+    public Task<Memory<byte>> ReadPacket(CancellationToken cancellationToken);
+    public Task SendPacket(Memory<byte> packet, CancellationToken cancellationToken);
 }

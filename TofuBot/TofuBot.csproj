@@ -9,6 +9,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\BotOneOne\BotOneOne.csproj" />
+      <ProjectReference Include="..\TofuBot.AI\TofuBot.AI.csproj" />
     </ItemGroup>
 
 </Project>

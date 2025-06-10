@@ -1,17 +1,9 @@
-﻿
+﻿namespace TofuBot;
 
-using System.Net;
-using BotOneOne;
-using BotOneOne.Connectivity;
-
-var source = new ReversedWebSocketConnectionSource();
-var ctx = new OneBotContext(source);
-
-var listener = new HttpListener();
-listener.Start();
-while (true)
+class Program
 {
-    var context = await listener.GetContextAsync();
-    var webSocketCtx = await context.AcceptWebSocketAsync(null);
-    source.UpgradeWebSocket(webSocketCtx.WebSocket);
+    public static void Main(string[] args)
+    {
+        
+    }
 }
