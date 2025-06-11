@@ -43,7 +43,7 @@ public class ReversedWebSocketListener(ReversedWebSocketConnectionSource connect
 
     private async Task Worker(CancellationToken cancellationToken)
     {
-        while (cancellationToken.IsCancellationRequested)
+        while (!cancellationToken.IsCancellationRequested)
         {
             var context = await Listener.GetContextAsync();
             var webSocketCtx = await context.AcceptWebSocketAsync(null);

@@ -1,6 +1,5 @@
-using BotOneOne;
 using BotOneOne.Connectivity;
-using BotOneOne.Extensions.OneBotV11;
+using BotOneOne.Protocol.OneBot;
 using TofuBot.AI.VectorDB;
 
 namespace TofuBot;
@@ -9,7 +8,7 @@ public class BotContext
 {
     private IConnectionSource _connectionSource;
     private ReversedWebSocketListener _webSocketListener;
-    private OneBotContext _oneBotContext;
+    private OneBotV11Context _oneBotContext;
 
     private VectorDbContext _vectorDbContext;
     
@@ -21,9 +20,8 @@ public class BotContext
         listener.AddPrefix("http://*:11122/");
         listener.WebSocketConnected += () => Console.WriteLine("[Protocol Server] connected");
         
-        var oneBot = new OneBotContext(source);
-        oneBot.UseOneBotV11();
-        
+        var oneBot = new OneBotV11Context(source);
+
         _connectionSource = source;
         _webSocketListener = listener;
         _oneBotContext = oneBot;

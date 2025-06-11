@@ -13,4 +13,16 @@ public static class Extensions
         message.Append(new AtMessageSegment(target));
         return message;
     }
+    
+    public static Message Image(this Message message, string file)
+    {
+        message.Append(new ImageMessageSegment(file));
+        return message;
+    }
+    
+    public static Message Reply(this Message message, long messageId)
+    {
+        message.Append(new ReplyMessageSegment(messageId));
+        return message;
+    }
 }

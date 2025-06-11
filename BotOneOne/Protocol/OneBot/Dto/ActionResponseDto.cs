@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace BotOneOne.Connectivity.Models;
+namespace BotOneOne.Protocol.OneBot.Dto;
 
 public class ActionResponseDto
 {

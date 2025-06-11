@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace BotOneOne.Connectivity.Models;
+namespace BotOneOne.Protocol.OneBot.Dto;
 
 public class ActionRequestDto
 {

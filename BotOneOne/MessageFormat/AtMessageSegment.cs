@@ -4,6 +4,11 @@ namespace BotOneOne.MessageFormat;
 
 public class AtMessageSegment : MessageSegment<AtMessageSegment.Payload>
 {
+    public override string ToString()
+    {
+        return $"[At {Data.Target}]";
+    }
+
     public AtMessageSegment(long target)
     {
         Data = new Payload

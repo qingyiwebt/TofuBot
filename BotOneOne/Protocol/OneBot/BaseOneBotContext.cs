@@ -1,23 +1,29 @@
 ﻿using BotOneOne.Connectivity;
-using BotOneOne.Connectivity.Models;
+using BotOneOne.MessageFormat;
+using BotOneOne.Protocol.OneBot.Dto;
+using BotOneOne.Protocol.OneBot.Model;
 using Newtonsoft.Json;
 
-namespace BotOneOne;
+namespace BotOneOne.Protocol.OneBot;
 
-public class OneBotContext
+public abstract class BaseOneBotContext
 {
     private readonly IConnectionSource _connectionSource;
-    private readonly OneBotContextOptions _options;
+    private readonly BotContextOptions _options;
     private readonly Dictionary<string, TaskCompletionSource<ActionResponseDto>> _pendingRequests = [];
 
     private CancellationTokenSource _cancellationTokenSource = new();
     private Task? _workerTask;
 
-    public OneBotContext(IConnectionSource connectionSource, OneBotContextOptions? options = null)
+    public event Action<IncomingMessageEventArgs>? MessageReceive;
+    
+    protected BaseOneBotContext(IConnectionSource connectionSource, BotContextOptions? options = null)
     {
         _connectionSource = connectionSource;
-        _options = options ?? OneBotContextOptions.Default;
+        _options = options ?? BotContextOptions.Default;
     }
+
+    public bool IsOpened => _workerTask != null;
 
     public void Open()
     {
@@ -47,7 +53,33 @@ public class OneBotContext
         // handle packet by echo
         if (_pendingRequests.TryGetValue(actionResponse.Echo, out var source))
         {
-            source.TrySetResult(actionResponse!);
+            source.TrySetResult(actionResponse);
+        }
+    }
+
+    private void HandleEvent(string eventType, string packet)
+    {
+        switch (eventType)
+        {
+            case "message":
+            {
+                var dto = JsonConvert.DeserializeObject<MessageEventDto>(packet)
+                    ?? throw new Exception("Null packet deserialized");
+                
+                // WORKAROUND: provide groupId when the message came from a group 
+                dto.Sender.GroupId = dto.GroupId;
+                
+                MessageReceive?.Invoke(new IncomingMessageEventArgs
+                {
+                    Message = dto.Message == null ? Message.Empty : Message.Parse(dto.Message),
+                    MessageId = dto.MessageId,
+                    Sender = dto.Sender,
+                    Time = DateTimeOffset.FromUnixTimeSeconds(dto.Time),
+                    Type = dto.MessageType == "group" ? TargetType.Group : TargetType.User
+                });
+                break;
+            }
+            default: throw new Exception($"Unknown eventType \"{eventType}\"");
         }
     }
 
@@ -58,7 +90,7 @@ public class OneBotContext
             try
             {
                 var packet = await _connectionSource.ReceiveTextAsync(cancellationToken);
-                var baseResponse = JsonConvert.DeserializeObject<BaseResponseDto>(packet);
+                var baseResponse = JsonConvert.DeserializeObject<BaseImcomingDto>(packet);
 
                 if (baseResponse == null)
                 {
@@ -67,7 +99,7 @@ public class OneBotContext
 
                 if (baseResponse.IsEventPacket)
                 {
-                    // TODO
+                    HandleEvent(baseResponse.PostType!, packet);
                 }
                 else
                 {
@@ -116,7 +148,7 @@ public class OneBotContext
     public async Task InvokeAction<T>(string actionName, T? parameters)
     {
         var cancellationTokenSource = new CancellationTokenSource();
-        cancellationTokenSource.CancelAfter(_options.Timeout);
+        cancellationTokenSource.CancelAfter(_options.InvocationTimeout);
         await InvokeActionInternal(new ActionRequestDto<T>
         {
             Action = actionName,
@@ -127,7 +159,7 @@ public class OneBotContext
     public async Task<TReturn?> InvokeAction<TReturn, TParam>(string actionName, TParam? parameters)
     {
         var cancellationTokenSource = new CancellationTokenSource();
-        cancellationTokenSource.CancelAfter(_options.Timeout);
+        cancellationTokenSource.CancelAfter(_options.InvocationTimeout);
 
         var response = await InvokeActionInternal(new ActionRequestDto<TParam>
         {

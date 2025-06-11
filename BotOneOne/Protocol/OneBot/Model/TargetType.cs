@@ -1,4 +1,4 @@
-namespace BotOneOne.Extensions.OneBotV11;
+namespace BotOneOne.Protocol.OneBot.Model;
 
 public enum TargetType
 {
