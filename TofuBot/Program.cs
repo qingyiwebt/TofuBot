@@ -1,5 +1,7 @@
 ﻿using BotOneOne.Connectivity;
 using BotOneOne.Protocol.OneBot;
+using Microsoft.Extensions.DependencyInjection;
+using TofuBot.Abilities;
 using TofuBot.AI.OpenAI;
 using TofuBot.Configuration;
 using YamlDotNet.Serialization;
@@ -9,12 +11,9 @@ namespace TofuBot;
 
 class Program
 {
-    private const string ModelUsageRespond = "respond";
-    private const string ModelUsagePurposeDetect = "purpose-detect";
-    
     private Config _config = null!;
-    private ModelPool _modelPool = new();
-    
+    private readonly ServiceProvider _serviceProvider;
+
     private void LoadConfig()
     {
         var deserializer = new DeserializerBuilder()
@@ -27,6 +26,7 @@ class Program
 
     private void BuildModelPool()
     {
+        var modelPool = _serviceProvider.GetService<ModelPool>()!;
         foreach (
             var model in _config.Models
                 .Select(x =>
@@ -37,37 +37,78 @@ class Program
                         ModelName = x.ModelName,
                         Usage = x.Usage,
                         Endpoint = provider.Endpoint,
-                        SecretKey = provider.SecretKey
+                        SecretKey = provider.SecretKey,
+                        Temperature = x.Temperature,
+                        TopP = x.TopP
                     };
                 }))
         {
-            _modelPool.AddModel(model);
+            modelPool.AddModel(model);
         }
     }
     
-    public void Bootstrap()
+    private void BuildBotContext()
+    {
+        var botContext = _serviceProvider.GetService<CharacterContext>()!;
+        botContext.Name = _config.Character.Name;
+        botContext.Description = _config.Character.Description;
+        botContext.PurposeGeneratePrompt = _config.Prompts.PurposeGenerate;
+        
+        var abilitiesManager = botContext.AbilitiesManager;
+        abilitiesManager.Add(new BrowsingGitHubAbility());
+        abilitiesManager.Add(new QQChatAbility());
+    }
+
+    private void Bootstrap()
     {
         LoadConfig();
         BuildModelPool();
+        BuildBotContext();
+        EventLoop();
     }
-    public static void Main(string[] args)
-    {
-        new Program().Bootstrap();
-        
-        var source = new ReversedWebSocketConnectionSource();
-        var listener = new ReversedWebSocketListener(source);
-        listener.AddPrefix("http://+:65511/");
-        listener.WebSocketConnected += () => Console.WriteLine("Connected");
-        
-        var oneBot = new OneBotV11Context(source);
-        
-        listener.Start();
-        oneBot.Open();
 
+    private async void EventLoop()
+    {
         while (true)
         {
-            var cmd = Console.ReadLine();
-            // Console.WriteLine("");
+            await Task.Delay(TimeSpan.FromSeconds(_config.EventConfig.EventDuration));
+            // TODO
+        }
+    }
+
+    private Program()
+    {
+        _serviceProvider = new ServiceCollection()
+            .AddSingleton<CharacterContext>()
+            .AddSingleton<ModelPool>()
+            .BuildServiceProvider();
+    }
+
+    public static async Task<int> Main(string[] args)
+    {
+        var program = new Program();
+        program.Bootstrap();
+        
+        while (true)
+        {
+            Console.Write("Tofu > ");
+            var cmd = Console.ReadLine() ?? string.Empty;
+
+            if (cmd.StartsWith("dbg.pg"))
+            {
+                var botContext = program._serviceProvider.GetService<CharacterContext>()!;
+                var ability = await botContext.PurposeGenerate();
+                Console.WriteLine($"[dbg] AI want to {ability.Name} ({ability.Description})");
+            } else if (cmd.StartsWith("dbg.emo "))
+            {
+                var botContext = program._serviceProvider.GetService<CharacterContext>()!;
+                botContext.Status.Emotion = cmd[8..];
+            }
+            else
+            {
+                Console.WriteLine($"Unknown command {cmd}");
+            }
         }
     }
 }
+
